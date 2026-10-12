@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#eaf1ee" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#13201d" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="data:," />
+  <title>Sudoku</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Mono:wght@400;500&display=swap');
+    :root {
+      color-scheme: light dark;
+      --page:#eaf1ee; --surface:#f9fcfa; --ink:#17322b; --muted:#587069;
+      --line:#afc2bc; --strong:#315f54; --accent:#247c68; --accent-soft:#d5ebe4;
+      --peer:#e6f0ed; --same:#c7e4dc; --given:#17322b; --entry:#15715f;
+      --wrong:#b84035; --wrong-bg:#f7deda; --shadow:0 14px 40px rgba(23,50,43,.10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page:#13201d; --surface:#1b2b27; --ink:#edf6f2; --muted:#a8bdb6;
+        --line:#526b64; --strong:#9dc4b9; --accent:#73cbb5; --accent-soft:#24443b;
+        --peer:#223630; --same:#31584e; --given:#edf6f2; --entry:#87dec8;
+        --wrong:#ff9186; --wrong-bg:#592e2b; --shadow:0 16px 42px rgba(0,0,0,.28);
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--page);color:var(--ink);font-family:"Atkinson Hyperlegible",sans-serif}
+    body{min-height:100vh;min-height:100dvh;padding:clamp(12px,3vw,28px);display:flex;justify-content:center}
+    button,select{font:inherit;color:inherit}
+    button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    main{width:min(100%,560px);display:flex;flex-direction:column;gap:14px;align-self:flex-start}
+    .topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .difficulty{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:700}
+    select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 30px 9px 10px;font-weight:700}
+    .text-btn,.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:42px;padding:8px 14px;font-weight:700;cursor:pointer}
+    .text-btn:active,.icon-btn:active,.tool:active,.num:active{background:var(--accent-soft)}
+    .board-wrap{position:relative;background:var(--surface);padding:clamp(6px,1.6vw,10px);border-radius:12px;box-shadow:var(--shadow)}
+    .board{display:grid;grid-template-columns:repeat(9,1fr);aspect-ratio:1;border:2px solid var(--strong);background:var(--strong);gap:1px;overflow:hidden}
+    .cell{position:relative;border:0;background:var(--surface);padding:0;display:flex;align-items:center;justify-content:center;min-width:0;font-family:"DM Mono",monospace;font-size:clamp(20px,7vw,34px);font-weight:500;color:var(--entry);cursor:pointer}
+    .cell.given{color:var(--given);font-weight:500}
+    .cell.peer{background:var(--peer)}
+    .cell.same{background:var(--same)}
+    .cell.selected{outline:3px solid var(--accent);outline-offset:-3px;z-index:2}
+    .cell.wrong{color:var(--wrong);background:var(--wrong-bg)}
+    .cell:nth-child(3n):not(:nth-child(9n)){border-right:2px solid var(--strong)}
+    .cell:nth-child(n+19):nth-child(-n+27),.cell:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid var(--strong)}
+    .notes{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);font-family:"DM Mono",monospace;font-size:clamp(7px,2.3vw,12px);line-height:1;color:var(--muted)}
+    .notes span{display:grid;place-items:center}
+    .controls{display:grid;gap:10px}
+    .number-pad{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+    .num{border:1px solid var(--line);border-radius:9px;background:var(--surface);height:clamp(44px,13vw,58px);font-family:"DM Mono",monospace;font-size:clamp(20px,6vw,28px);font-weight:500;color:var(--accent);cursor:pointer}
+    .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .tool{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:45px;padding:7px 4px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+    .tool[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+    @media (prefers-color-scheme:dark){.tool[aria-pressed="true"]{color:#10211c}}
+    .tool svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .status{min-height:24px;margin:0;text-align:center;color:var(--muted);font-size:15px}
+    .loading{position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 88%,transparent);display:none;place-items:center;z-index:5;font-weight:700;color:var(--accent);border-radius:12px}
+    .loading.show{display:grid}
+    .spinner{width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .celebrate{position:fixed;inset:0;background:rgba(9,25,21,.58);display:none;place-items:center;z-index:20;padding:20px}
+    .celebrate.show{display:grid}
+    .victory{width:min(100%,360px);background:var(--surface);border-radius:18px;padding:32px 24px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);position:relative;overflow:hidden}
+    .victory h2{font-size:34px;margin:0 0 8px}.victory p{color:var(--muted);font-size:18px;margin:0 0 22px}
+    .victory button{border:0;background:var(--accent);color:#fff;border-radius:9px;padding:12px 20px;font-weight:700;cursor:pointer}
+    @media (prefers-color-scheme:dark){.victory button{color:#10211c}}
+    .burst{position:absolute;width:9px;height:28px;border-radius:4px;background:var(--accent);animation:fall 1.8s ease-in infinite;opacity:.8}
+    .burst:nth-child(1){left:8%;top:-30px;animation-delay:.1s}.burst:nth-child(2){left:25%;top:-30px;animation-delay:.7s;background:#e1a73b}.burst:nth-child(3){left:48%;top:-30px;animation-delay:.3s;background:#d76655}.burst:nth-child(4){left:70%;top:-30px;animation-delay:1s;background:#5b9dc9}.burst:nth-child(5){left:90%;top:-30px;animation-delay:.5s;background:#7cab6c}
+    @keyframes fall{to{transform:translateY(360px) rotate(230deg)}}
+    @media (max-width:390px){body{padding:10px}.topbar{gap:6px}.difficulty{gap:5px}.text-btn{padding:7px 10px}.tools{grid-template-columns:repeat(2,1fr)}main{gap:10px}}
+    @media (prefers-reduced-motion:reduce){.spinner,.burst{animation:none}}
+    @media (min-width:650px){main{gap:18px}.board-wrap{padding:10px}.number-pad{gap:9px}}
+  </style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <label class="difficulty">Level
+      <select id="difficulty" aria-label="Puzzle difficulty">
+        <option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option>
+      </select>
+    </label>
+    <button class="text-btn" id="newGame">New puzzle</button>
+  </div>
+
+  <section class="board-wrap" aria-label="Sudoku puzzle">
+    <div class="board" id="board" role="grid" aria-label="9 by 9 Sudoku grid"></div>
+    <div class="loading show" id="loading"><div><div class="spinner"></div>Making a puzzle…</div></div>
+  </section>
+
+  <div class="controls">
+    <div class="number-pad" id="numberPad" aria-label="Number pad"></div>
+    <div class="tools">
+      <button class="tool" id="notes" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Notes</button>
+      <button class="tool" id="erase"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 19-4-4 10-10a2 2 0 0 1 3 0l3 3a2 2 0 0 1 0 3l-8 8H7Z"/><path d="m9 9 6 6M7 19h13"/></svg>Erase</button>
+      <button class="tool" id="hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 22h4M8.5 14.5A7 7 0 1 1 15.5 14.5C14.5 15.4 14 16 14 18h-4c0-2-.5-2.6-1.5-3.5Z"/></svg>Hint</button>
+      <button class="tool" id="mistakes" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17.5v.5"/></svg>Checks</button>
+    </div>
+  </div>
+  <p class="status" id="status" aria-live="polite">Select a square, then choose a number.</p>
+</main>
+
+<div class="celebrate" id="celebrate" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="victory"><i class="burst"></i><i class="burst"></i><i class="burst"></i><i class="burst"></i><i class="burst"></i>
+    <h2 id="winTitle">Beautifully solved.</h2><p>Every row, column, and box is complete.</p><button id="playAgain">Play another</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var boardEl=document.getElementById("board"), padEl=document.getElementById("numberPad"), statusEl=document.getElementById("status");
+  var puzzle=[], solution=[], values=[], notes=[], selected=-1, notesMode=false, showMistakes=true, busy=false;
+  var cells=[];
+
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+  function makeSolution(){
+    var base=3, side=9;
+    function pattern(r,c){return (base*(r%base)+Math.floor(r/base)+c)%side}
+    var groups=shuffle([0,1,2]), rows=[], cols=[], nums=shuffle([1,2,3,4,5,6,7,8,9]);
+    groups.forEach(function(g){shuffle([0,1,2]).forEach(function(r){rows.push(g*3+r)})});
+    shuffle([0,1,2]).forEach(function(g){shuffle([0,1,2]).forEach(function(c){cols.push(g*3+c)})});
+    var out=[]; rows.forEach(function(r){cols.forEach(function(c){out.push(nums[pattern(r,c)])})}); return out;
+  }
+  function countSolutions(grid,limit){
+    var row=new Array(9).fill(0),col=new Array(9).fill(0),box=new Array(9).fill(0), full=0x3FE;
+    for(var i=0;i<81;i++){var v=grid[i];if(v){var bit=1<<v,r=Math.floor(i/9),c=i%9,b=Math.floor(r/3)*3+Math.floor(c/3);if((row[r]|col[c]|box[b])&bit)return 0;row[r]|=bit;col[c]|=bit;box[b]|=bit}}
+    var count=0;
+    function solve(){
+      if(count>=limit)return;
+      var best=-1,bestMask=0,bestN=10;
+      for(var k=0;k<81;k++)if(!grid[k]){var rr=Math.floor(k/9),cc=k%9,bb=Math.floor(rr/3)*3+Math.floor(cc/3),mask=full&~(row[rr]|col[cc]|box[bb]),n=0,x=mask;while(x){x&=x-1;n++}if(n===0)return;if(n<bestN){bestN=n;best=k;bestMask=mask;if(n===1)break}}
+      if(best<0){count++;return}
+      var r=Math.floor(best/9),c=best%9,b=Math.floor(r/3)*3+Math.floor(c/3),m=bestMask;
+      while(m&&count<limit){var bit=m&-m,v=0,z=bit;while(z>1){z>>=1;v++}m-=bit;grid[best]=v;row[r]|=bit;col[c]|=bit;box[b]|=bit;solve();row[r]&=~bit;col[c]&=~bit;box[b]&=~bit;grid[best]=0}
+    }
+    solve();return count;
+  }
+  function makePuzzle(level){
+    var target={easy:40,medium:33,hard:27}[level], sol=makeSolution(), p=sol.slice(), indices=shuffle(Array.from({length:41},function(_,i){return i}));
+    indices.forEach(function(i){
+      if(p.filter(Boolean).length<=target)return;
+      var j=80-i, old=p[i],old2=p[j];p[i]=0;if(j!==i)p[j]=0;
+      if(p.filter(Boolean).length<target||countSolutions(p.slice(),2)!==1){p[i]=old;if(j!==i)p[j]=old2}
+    });
+    var leftovers=shuffle(Array.from({length:81},function(_,i){return i}));
+    leftovers.forEach(function(i){if(p[i]&&p.filter(Boolean).length>target){var old=p[i];p[i]=0;if(countSolutions(p.slice(),2)!==1)p[i]=old}});
+    return {puzzle:p,solution:sol};
+  }
+  function renderBoard(){
+    cells.forEach(function(cell,i){
+      var r=Math.floor(i/9),c=i%9,sr=Math.floor(selected/9),sc=selected%9;
+      cell.className="cell"+(puzzle[i]?" given":"");
+      if(selected>=0&&(r===sr||c===sc||(Math.floor(r/3)===Math.floor(sr/3)&&Math.floor(c/3)===Math.floor(sc/3))))cell.classList.add("peer");
+      if(selected>=0&&values[selected]&&values[i]===values[selected])cell.classList.add("same");
+      if(i===selected)cell.classList.add("selected");
+      if(showMistakes&&!puzzle[i]&&values[i]&&values[i]!==solution[i])cell.classList.add("wrong");
+      cell.textContent="";
+      if(values[i])cell.textContent=values[i];
+      else if(notes[i]&&notes[i].size){var wrap=document.createElement("span");wrap.className="notes";for(var n=1;n<=9;n++){var sp=document.createElement("span");sp.textContent=notes[i].has(n)?n:"";wrap.appendChild(sp)}cell.appendChild(wrap)}
+      cell.setAttribute("aria-label","Row "+(r+1)+", column "+(c+1)+(values[i]?", "+values[i]:", empty")+(puzzle[i]?", given":""));
+      cell.setAttribute("aria-selected",i===selected?"true":"false");
+    });
+  }
+  function choose(i){if(busy)return;selected=i;renderBoard()}
+  function inputNumber(n){
+    if(selected<0){statusEl.textContent="Choose an empty square first.";return}if(puzzle[selected]){statusEl.textContent="That number is part of the puzzle.";return}
+    if(notesMode){if(values[selected])values[selected]=0;if(notes[selected].has(n))notes[selected].delete(n);else notes[selected].add(n);statusEl.textContent="Note "+n+(notes[selected].has(n)?" added.":" removed.")}
+    else{values[selected]=n;notes[selected].clear();if(showMistakes&&n!==solution[selected])statusEl.textContent="That number does not fit here.";else statusEl.textContent="Number placed.";if(n===solution[selected])removePeerNotes(selected,n)}
+    renderBoard();checkWin();
+  }
+  function removePeerNotes(idx,n){var r=Math.floor(idx/9),c=idx%9;for(var i=0;i<81;i++){var rr=Math.floor(i/9),cc=i%9;if(rr===r||cc===c||(Math.floor(rr/3)===Math.floor(r/3)&&Math.floor(cc/3)===Math.floor(c/3)))notes[i].delete(n)}}
+  function erase(){if(selected<0||puzzle[selected])return;values[selected]=0;notes[selected].clear();statusEl.textContent="Square cleared.";renderBoard()}
+  function hint(){
+    if(busy)return;var idx=selected>=0&&!puzzle[selected]&&values[selected]!==solution[selected]?selected:-1;
+    if(idx<0){var open=[];for(var i=0;i<81;i++)if(!puzzle[i]&&values[i]!==solution[i])open.push(i);if(!open.length){checkWin();return}idx=open[Math.floor(Math.random()*open.length)]}
+    values[idx]=solution[idx];notes[idx].clear();removePeerNotes(idx,solution[idx]);selected=idx;statusEl.textContent="A square has been filled in.";renderBoard();checkWin();
+  }
+  function checkWin(){for(var i=0;i<81;i++)if(values[i]!==solution[i])return;document.getElementById("celebrate").classList.add("show")}
+  function newPuzzle(){
+    if(busy)return;busy=true;document.getElementById("loading").classList.add("show");document.getElementById("celebrate").classList.remove("show");statusEl.textContent="Creating a unique puzzle…";
+    setTimeout(function(){var game=makePuzzle(document.getElementById("difficulty").value);puzzle=game.puzzle;solution=game.solution;values=puzzle.slice();notes=Array.from({length:81},function(){return new Set()});selected=-1;busy=false;document.getElementById("loading").classList.remove("show");statusEl.textContent="Select a square, then choose a number.";renderBoard()},40)
+  }
+  for(var i=0;i<81;i++){(function(idx){var b=document.createElement("button");b.className="cell";b.type="button";b.setAttribute("role","gridcell");b.addEventListener("click",function(){choose(idx)});boardEl.appendChild(b);cells.push(b)})(i)}
+  for(var n=1;n<=9;n++){(function(num){var b=document.createElement("button");b.className="num";b.type="button";b.textContent=num;b.setAttribute("aria-label","Enter "+num);b.addEventListener("click",function(){inputNumber(num)});padEl.appendChild(b)})(n)}
+  document.getElementById("newGame").addEventListener("click",newPuzzle);
+  document.getElementById("difficulty").addEventListener("change",newPuzzle);
+  document.getElementById("notes").addEventListener("click",function(){notesMode=!notesMode;this.setAttribute("aria-pressed",notesMode?"true":"false");statusEl.textContent=notesMode?"Notes mode on.":"Notes mode off."});
+  document.getElementById("mistakes").addEventListener("click",function(){showMistakes=!showMistakes;this.setAttribute("aria-pressed",showMistakes?"true":"false");statusEl.textContent=showMistakes?"Mistake checks on.":"Mistake checks off.";renderBoard()});
+  document.getElementById("erase").addEventListener("click",erase);document.getElementById("hint").addEventListener("click",hint);document.getElementById("playAgain").addEventListener("click",newPuzzle);
+  document.addEventListener("keydown",function(e){if(busy)return;if(e.key>="1"&&e.key<="9"){inputNumber(Number(e.key));e.preventDefault()}else if(e.key==="Backspace"||e.key==="Delete"||e.key==="0"){erase();e.preventDefault()}else if(e.key.toLowerCase()==="n"){document.getElementById("notes").click()}else if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].indexOf(e.key)>=0){var d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-9,ArrowDown:9}[e.key];if(selected<0)selected=0;else selected=Math.max(0,Math.min(80,selected+d));renderBoard();cells[selected].focus();e.preventDefault()}});
+  newPuzzle();
+})();
+</script>
+</body>
+</html>
