@@ -31,6 +31,9 @@
     button,select{font:inherit;color:inherit}
     button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     main{width:min(100%,560px);display:flex;flex-direction:column;gap:14px;align-self:flex-start}
+    .home-row{display:flex;justify-content:flex-start}
+    .home-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 13px;font-weight:700;font-size:14px;text-decoration:none}
+    .home-pill:active{background:var(--accent-soft)}
     .topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
     .difficulty{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:700}
     select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 30px 9px 10px;font-weight:700}
@@ -77,6 +80,9 @@
 </head>
 <body>
 <main>
+  <div class="home-row">
+    <a class="home-pill" href="https://jesuslovestyler.com/">⌂ Home</a>
+  </div>
   <div class="topbar">
     <label class="difficulty">Level
       <select id="difficulty" aria-label="Puzzle difficulty">
@@ -195,5 +201,6 @@
   newPuzzle();
 })();
 </script>
+<script data-goatcounter="https://jesuslovestyler.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
