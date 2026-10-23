@@ -1,9 +1,8 @@
 # Sudoku
 
-Classic 9x9 Sudoku — fresh, uniquely solvable puzzles at three difficulties: easy, medium, and hard.
+A free sudoku game you play in your browser: nine by nine, every row, column, and box holding 1 through 9 exactly once. Sit down and think it through.
 
-Large touch controls, pencil-mark notes mode, optional mistake checks, erase and hint tools, keyboard support, and a win celebration. Clean and readable on phones, in light and dark themes.
+**Live:** https://jesuslovestyler.github.io/Sudoku/
+**Home:** https://jesuslovestyler.com/
 
-No scoreboard, no saved data, no ads, no tracking — just the puzzle.
-
-Built with Muse artifacts.
+One self-contained page: no account, no ads, nothing to buy. Released into the public domain (Unlicense — see LICENSE). Built by Tyler with Noki.
